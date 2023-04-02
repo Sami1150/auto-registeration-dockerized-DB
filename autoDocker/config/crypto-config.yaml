@@ -1,0 +1,47 @@
+# Defines four organizations
+#  - Orderer organization
+#  - Acme
+#  - Budget
+#  - Expo
+##### Orderer for acme
+OrdererOrgs:
+  - Name: Orderer
+    Domain: excise.com
+    EnableNodeOUs: true
+    Specs:
+      - Hostname: orderer
+      
+#### Peers for acme
+PeerOrgs:
+  # Peer configuration for Excise
+  - Name: Excise
+    Domain: excise.com
+    EnableNodeOUs: true
+    Specs:
+      - Hostname: peer1.excise.com
+        CommonName: peer1.excise.com
+    Users:
+      Count: 1
+
+  # Peer configuration for FBR
+  - Name: Fbr
+    Domain: fbr.com
+    EnableNodeOUs: true
+    Specs:
+      - Hostname: peer1.fbr.com
+        CommonName: peer1.fbr.com
+    Users:
+      Count: 1
+
+  # Peer configuration for Budget
+  - Name: Manufacturer
+    Domain: manufacturer.com
+    EnableNodeOUs: true
+    Specs:
+      - Hostname: peer1.manufacturer.com
+        CommonName: peer1.manufacturer.com
+    Users:
+      Count: 1
+
+
+      

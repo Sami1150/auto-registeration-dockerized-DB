@@ -1,0 +1,158 @@
+#package the chaincode
+
+. bins/set-context.sh excise
+
+
+export CC_NAME=gocc
+export CC_VERSION=1.0
+export CC_LABEL="$CC_NAME.$CC_VERSION-1.0"
+export CC_PACKAGE_FILE=$HOME/packages/$CC_LABEL.tar.gz
+
+
+mkdir -p $HOME/packages
+
+peer lifecycle chaincode package $CC_PACKAGE_FILE --label $CC_LABEL -p supplychain
+
+<!-- check package folder -->
+ls -la $CC_PACKAGE_FILE
+
+
+peer lifecycle chaincode install $CC_PACKAGE_FILE
+
+
+1. Get the package ID
+peer lifecycle chaincode queryinstalled
+CC_PACKAGE_ID=gocc.1.0-1.0:629c4283ef273048b3c1ea77cf8d72af7558fd1805eb8487e3be8a71cd00bf15
+peer lifecycle chaincode approveformyorg -n gocc -v 1.0 -C  automobilechannel --sequence 1  --init-required --package-id $CC_PACKAGE_ID -o localhost:7050 --waitForEvent 
+
+
+Check Commit Readiness
+peer   lifecycle   chaincode   checkcommitreadiness -n gocc -v 1.0 -C  automobilechannel --sequence 1 --init-required 
+
+
+4. Commit the chaincode
+peer lifecycle chaincode commit -n gocc -v 1.0 -C automobilechannel --sequence 1 --init-required  --waitForEvent 
+
+5. Check committed
+peer lifecycle chaincode querycommitted -n gocc  -C automobilechannel
+
+
+
+Setup the environment variable
+export CORE_CHAINCODE_ID_NAME=gocc:1.0
+export CORE_CHAINCODE_LOGGING_LEVEL=debug
+export CORE_PEER_ADDRESS="peer1.excise.com:8051"
+
+
+Invoke and query
+
+peer chaincode invoke --isInit  -n gocc  -C automobilechannel -c '{"Args":["init","Pkr","10000000","Pakistani Rupee!!!","MAdil"]}'
+
+peer chaincode query  -C automobilechannel -n gocc -c '{"Args":["balanceOf","3520299610969"]}'
+peer chaincode invoke -C automobilechannel -n gocc  -c '{"Args":["transfer", "3520299610969", "1234", "100","Dar"]}'
+
+Query balance for 'Madil' - status OK
+peer chaincode query  -C automobilechannel -n gocc -c '{"Args":["balanceOf","3520299610969"]}'
+
+Query balance for 'Dar' - status OK
+peer chaincode query  -C automobilechannel -n gocc -c '{"Args":["balanceOf","1234"]}'
+
+Transfer 100 tokens from 'MAdil' to 'Dar' - status OK
+peer chaincode invoke -n gocc  -C automobilechannel -c '{"Args":["transfer", "3520299610969", "1234", "100","Dar"]}'
+
+Query balance for 'Dar' again - status OK
+peer chaincode query  -C automobilechannel -n gocc -c '{"Args":["balanceOf","1234"]}'
+
+Query balance for 'Fbr' 6666 - status OK
+peer chaincode query  -C automobilechannel -n gocc -c '{"Args":["balanceOf","6666"]}'
+
+Register Vehicles - status OK
+peer chaincode invoke -n gocc  -C automobilechannel -c '{"Args":["Manufacture", "3520299610969", "23B8", "A7655","Honda","2022","Car","Civic","7777","10000","12000","2/11/2022"]}'
+peer chaincode invoke -n gocc  -C automobilechannel -c '{"Args":["Manufacture", "3520299610969", "23Be8", "A76e55","Honda","2022","Car","City","7777","10000","12000","2/11/2022"]}'
+
+GetVehiclesByCNIC - status OK
+peer chaincode query -C automobilechannel -n gocc -c '{"Args": ["GetVehiclesByCNIC", "7777"]}'
+
+Get Channel Info and height - status OK
+peer channel getinfo -c automobilechannel
+
+Get the vehicle by chassis no ,engine no,company name by chassis no
+peer chaincode query -C automobilechannel -n gocc -c '{"Args":["getStateRangeOnKey","23B8"]}'
+
+:By Company Name
+peer chaincode query -C automobilechannel -n gocc -c '{"Args":["getStateRangeOnKey","Honda"]}'
+
+:By Engine No
+peer chaincode query -C automobilechannel -n gocc -c '{"Args":["getStateRangeOnKey","A7655"]}'
+
+:By Combining two or more keys
+peer chaincode query -C automobilechannel -n gocc -c '{"Args":["getStateRangeOnKey","A7655","23B8","Honda"]}'
+
+# peer chaincode query -C automobilechannel -n gocc -c '{"Args": ["GetVehicleByVin", "100"]}'
+
+peer chaincode invoke -n gocc  -C automobilechannel -c '{"Args": ["TransferOwnership", "7777","1234","A7655","23B8","Honda","2019-02-01"]}'
+
+peer channel getinfo -c automobilechannel
+
+
+# use below using above amendments 
+# Query the balance for 'Madil'
+#  set-chain-env.sh         -q   '{"Args":["balanceOf","3520299610969"]}'
+#  chain.sh query
+
+# Invoke
+# ======
+# Transfer 100 tokens from 'MAdil' to 'Dar'
+#   set-chain-env.sh         -i   '{"Args":["transfer", "3520299610969", "1234", "100","Dar"]}'
+#   chain.sh  invoke
+
+#    set-chain-env.sh         -q   '{"Args":["balanceOf","1234"]}'
+#  chain.sh query
+
+#  set-chain-env.sh         -q   '{"Args":["balanceOf","6666"]}'
+#  chain.sh query
+ 
+#  set-chain-env.sh         -i   '{"Args":["Manufacture", "3520299610969", "23B8", "A7655","Honda","2022","Car","Civic","7777","10000","12000","2/11/2022"]}'
+#   chain.sh  invoke
+
+  #  set-chain-env.sh         -i   '{"Args":["Manufacture", "3520299610969", "23Be8", "A76e55","Honda","2022","Car","City","7777","10000","12000","2/11/2022"]}'
+  # chain.sh  invoke
+
+#   set-chain-env.sh  -q '{"Args": ["GetVehiclesByCNIC", "7777"]}'
+# chain.sh query
+# Query
+# =====
+# Check the balance for 'Madil' & 'Dar'
+#  set-chain-env.sh         -q   '{"Args":["balanceOf","3520299610969"]}'
+#  chain.sh query
+#  set-chain-env.sh         -q   '{"Args":["balanceOf","6666"]}'
+#  chain.sh query
+
+# Query 
+# ====
+# get the vehicle by chassis no ,engine no,company name by chassis no
+# <!-- set-chain-env.sh         -q   '{"Args":["getStateRangeOnKey","23B8"]}'
+#  chain.sh query
+#  by engine no
+#  set-chain-env.sh         -q   '{"Args":["getStateRangeOnKey","A7655"]}'
+#  chain.sh query
+
+#  by company name
+#   set-chain-env.sh         -q   '{"Args":["getStateRangeOnKey","Honda"]}'
+#  chain.sh query -->
+#   by combining two or more
+#    set-chain-env.sh         -q   '{"Args":["getStateRangeOnKey","A7655","23B8","Honda"]}'
+#  chain.sh query
+
+
+
+
+# <!-- set-chain-env.sh  -q '{"Args": ["GetVehicleByVin", "100"]}'
+# chain.sh query -->
+
+# Transfer Ownership
+#  from ,to ,car composite key which is chassisNo~engineNo~companyName
+
+# chain.sh invoke
+# set-chain-env.sh  -i '{"Args": ["TransferOwnership", "7777","1234","A7655","23B8","Honda","2019-02-01"]}'
+# chain.sh invoke

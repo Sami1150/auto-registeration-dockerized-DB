@@ -1,0 +1,217 @@
+# Compose file for launching the test setup with
+# a Peer for Acme and a Peer for Budget
+
+version: '2'
+
+networks:
+  automobile:
+
+# Storage outside the containers
+# volumes:
+#   data-orderer.excise.com:
+#   data-peer1.excise.com:
+#   data-peer1.fbr.com:
+#   data-peer1.manufacturer.com:
+
+services:
+
+  # Orderer service
+  orderer.excise.com:
+    container_name: orderer.excise.com
+    image: hyperledger/fabric-orderer:$IMAGE_TAG
+    working_dir: $HOME
+    command: orderer
+    # Override environment variables for orderer in this section
+    environment:
+      - FABRIC_CFG_PATH=/var/hyperledger/config
+      - FABRIC_LOGGING_SPEC=ERROR
+      - ORDERER_GENERAL_LISTENADDRESS=orderer.excise.com
+      - ORDERER_GENERAL_GENESISFILE=/var/hyperledger/config/automobilechannel.block
+      - ORDERER_GENERAL_LOCALMSPID=OrdererMSP
+      - ORDERER_GENERAL_LOCALMSPDIR=/var/hyperledger/msp
+      - ORDERER_FILELEDGER_LOCATION=/var/ledger
+    # Host folder mappings
+    volumes:
+    # Folder with genesis block
+    - ${PWD}/config/orderer:/var/hyperledger/config
+    # Map the folder with MSP for orderer
+    - ${PWD}/config/crypto-config/ordererOrganizations/excise.com/orderers/orderer.excise.com/msp:/var/hyperledger/msp
+    # # Added to support the TLS setup
+    - ${PWD}/config/crypto-config/ordererOrganizations/excise.com/orderers/orderer.excise.com/tls:/var/hyperledger/tls
+    # - data-orderer.excise.com:/var/ledger
+    # Map the current folder to cfg
+    #- ${PWD}/config/orderer:/var/hyperledger/config
+    #- ${HOME}/ledgers/orderer.excise.com:/var/ledger
+    ports:
+      - 7050:7050
+    networks:
+      - automobile
+
+  # Excise peer1
+  peer1.excise.com:
+    container_name: peer1.excise.com
+    image: hyperledger/fabric-peer:$IMAGE_TAG
+    # Override variables in this section
+    environment:
+      - FABRIC_CFG_PATH=/var/hyperledger/config
+      - FABRIC_LOGGING_SPEC=WARNING
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=${COMPOSE_PROJECT_NAME}_automobile
+
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_PEER_ID=peer1.excise.com
+      - CORE_PEER_ADDRESS=peer1.excise.com:7051
+      #- CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer1.excise.com:7051
+      - CORE_PEER_LOCALMSPID=ExciseMSP
+      - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/msp
+      - CORE_PEER_TLS_ENABLED=false
+      - CORE_PEER_FILESYSTEMPATH=/var/ledger
+    # Start the peer node
+    command: peer node start
+    working_dir: $HOME
+    # Host folder mappings
+    volumes:
+      # Folder with channel create tx file
+      - ${PWD}/config/excise:/var/hyperledger/config
+      # Map the folder with MSP for Peer
+      - ${PWD}/config/crypto-config/peerOrganizations/excise.com/peers/peer1.excise.com/msp:/var/hyperledger/msp
+      # Added to support the TLS setup
+      - ${PWD}/config/crypto-config/peerOrganizations/excise.com/peers/peer1.excise.com/tls:/var/hyperledger/tls
+      - /var/run/:/host/var/run/
+      #- data-peer1.excise.com:/var/hyperledger/production
+      #- ${PWD}/config/excise:/var/hyperledger/config
+    depends_on: 
+      - orderer.excise.com
+    # Map the ports on Host VM to container ports
+    ports:
+      - 8051:7051
+      - 8052:7052
+    networks:
+      - automobile
+
+
+
+
+
+
+
+  # Fbr peer1
+  peer1.fbr.com:
+    container_name: peer1.fbr.com
+    image: hyperledger/fabric-peer:$IMAGE_TAG
+    # landing directory
+    working_dir: $HOME
+    # command: peer node start --peer-chaincodedev=true
+    command: peer node start
+    # Environment setup for peer
+    environment:
+      - FABRIC_CFG_PATH=/var/hyperledger/config
+      - FABRIC_LOGGING_SPEC=WARNING
+      - GOPATH=/opt/gopath
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=${COMPOSE_PROJECT_NAME}_automobile
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer1.fbr.com:7051
+
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_PEER_ID=peer1.fbr.com
+      #- CORE_PEER_ADDRESS=peer1.fbr.com:7051
+      - CORE_PEER_LOCALMSPID=FbrMSP
+      - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/msp
+      - CORE_PEER_TLS_ENABLED=false
+      - CORE_PEER_FILESYSTEMPATH=/var/ledger
+    # host file system mappings
+    volumes:
+      # Folder with channel create tx file
+      - ${PWD}/config/fbr:/var/hyperledger/config
+      # Map the folder with MSP for Peer
+      - ${PWD}/config/crypto-config/peerOrganizations/fbr.com/peers/peer1.fbr.com/msp:/var/hyperledger/msp
+      # Added to support the TLS setup
+      - ${PWD}/config/crypto-config/peerOrganizations/fbr.com/peers/peer1.fbr.com/tls:/var/hyperledger/tls
+      - /var/run/:/host/var/run/
+      # - data-peer1.fbr.com:/var/hyperledger/production
+      #- ${PWD}/config/fbr:/var/hyperledger/config
+
+    depends_on: 
+      - orderer.excise.com
+    # Map the ports on Host VM to container ports
+    ports:
+      - 9051:7051
+      - 9052:7052
+    networks:
+      - automobile
+
+  # Manufacturer peer1
+  peer1.manufacturer.com:
+    container_name: peer1.manufacturer.com
+    image: hyperledger/fabric-peer:$IMAGE_TAG
+    # landing directory
+    working_dir: $HOME
+    # command: peer node start --peer-chaincodedev=true
+    command: peer node start
+    # Environment setup for peer
+    environment:
+      - FABRIC_CFG_PATH=/var/hyperledger/config
+      - FABRIC_LOGGING_SPEC=WARNING
+      - GOPATH=/opt/gopath
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=${COMPOSE_PROJECT_NAME}_automobile
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer1.manufacturer.com:7051
+
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_PEER_ID=peer1.manufacturer.com
+      #- CORE_PEER_ADDRESS=peer1.fbr.com:7051
+      - CORE_PEER_LOCALMSPID=ManufacturerMSP
+      - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/msp
+      - CORE_PEER_TLS_ENABLED=false
+      - CORE_PEER_FILESYSTEMPATH=/var/ledger
+
+    # host file system mappings
+    volumes:
+      # Folder with channel create tx file
+      - ${PWD}/config/manufacturer:/var/hyperledger/config
+      # Map the folder with MSP for Peer
+      - ${PWD}/config/crypto-config/peerOrganizations/manufacturer.com/peers/peer1.manufacturer.com/msp:/var/hyperledger/msp
+      # Added to support the TLS setup
+      - ${PWD}/config/crypto-config/peerOrganizations/manufacturer.com/peers/peer1.manufacturer.com/tls:/var/hyperledger/tls
+      - /var/run/:/host/var/run/
+      #- data-peer1.manufacturer.com:/var/hyperledger/production
+      #- ${PWD}/config/manufacturer:/var/hyperledger/config
+
+    depends_on: 
+      - orderer.excise.com
+    # Map the ports on Host VM to container ports
+    ports:
+      - 7051:7051
+      - 7052:7052
+    networks:
+      - automobile
+
+  # # Tools container used for managing peers
+  # tools:
+  #   container_name: tools
+  #   command: /bin/bash
+
+  #   # Tools container image
+  #   image: hyperledger/fabric-tools:$IMAGE_TAG
+
+  #   tty: true
+  #   stdin_open: true
+  #   environment:
+  #     - GOPATH=/opt/gopath
+  #     - FABRIC_CFG_PATH=/var/hyperledger/config
+  #     - FABRIC_LOGGING_SPEC=WARNING
+  #   # This is the working directory on login
+  #   working_dir: /opt/scripts
+  #   volumes:
+  #     # Mapping for the sample chaincode folders
+  #     - ${PWD}/../artefacts/nodechaincode:/opt/nodechaincode
+  #     - ${PWD}/../gopath:/opt/gopath
+  #     # Folder with channel create tx file
+  #     - ${PWD}/config:/var/hyperledger/config
+  #     # Map the folder to root of all Fabric CA Client crypto
+  #     - ${PWD}/config/crypto-config/peerOrganizations:/var/hyperledger/crypto
+  #     # VM docker stream folder mapping
+  #     - /var/run/:/host/var/run/
+  #     # Map the bins folder
+  #     - ${PWD}/tool-bins:/opt/scripts
+  #   networks:
+  #     - automobile
+  
+  

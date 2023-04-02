@@ -1,0 +1,74 @@
+# Docker compose for multi-org-ca-1
+#DEV_MODE_DEV
+version: '2'
+
+networks:
+  automobile:
+
+services:
+  # Excise peer1
+  excise-peer1.couchdb:
+    container_name: excise-peer1.couchdb
+    image: hyperledger/fabric-couchdb
+    environment:
+      - COUCHDB_USER=
+      - COUCHDB_PASSWORD=
+    ports:
+      - "5984:5984"
+    networks:
+      - automobile
+
+  peer1.excise.com:
+    container_name: peer1.excise.com
+    environment:
+      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=excise-peer1.couchdb:5984
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=
+    depends_on:
+      - excise-peer1.couchdb
+
+  # fbr peer1
+  fbr-peer1.couchdb:
+    container_name: fbr-peer1.couchdb
+    image: hyperledger/fabric-couchdb
+    environment:
+      - COUCHDB_USER=
+      - COUCHDB_PASSWORD=
+    ports:
+      - "6984:5984"
+    networks:
+      - automobile
+
+  peer1.fbr.com:
+    container_name: peer1.fbr.com
+    environment:
+      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=fbr-peer1.couchdb:5984
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=
+    depends_on:
+      - fbr-peer1.couchdb
+
+  # manufacturer peer1
+  manufacturer-peer1.couchdb:
+    container_name: manufacturer-peer1.couchdb
+    image: hyperledger/fabric-couchdb
+    environment:
+      - COUCHDB_USER=
+      - COUCHDB_PASSWORD=
+    ports:
+      - "7984:5984"
+    networks:
+      - automobile
+
+  peer1.manufacturer.com:
+    container_name: peer1.manufacturer.com
+    environment:
+      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=manufacturer-peer1.couchdb:5984
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=
+    depends_on:
+      - manufacturer-peer1.couchdb
+    

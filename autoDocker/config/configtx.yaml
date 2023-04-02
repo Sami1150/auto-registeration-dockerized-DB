@@ -1,0 +1,315 @@
+
+# yaml.0
+# Used in the multi-org-ca setup
+
+#   CAPABILITIES
+Capabilities:
+  Application: &ApplicationCapabilities
+    V2_0: true
+  Orderer: &OrdererCapabilities
+    V2_0: true
+  Channel: &ChannelCapabilities
+    V2_0: true
+
+# ORGANIZATIONS
+Organizations:
+  - &Orderer
+    Name: Orderer
+    ID: OrdererMSP
+    MSPDir: ./crypto-config/ordererOrganizations/excise.com/msp
+    # Policies are mandatory starting 2.x
+    Policies: &OrdererPolicies
+      Readers:
+          Type: Signature
+          Rule: "OR('OrdererMSP.member')"
+      Writers:
+          Type: Signature
+          Rule: "OR('OrdererMSP.member')"
+      Admins:
+          Type: Signature
+          # ONLY Admin Role can carry out administration activities
+          Rule: "OR('OrdererMSP.admin')"
+      Endorsement:
+          Type: Signature
+          Rule: "OR('OrdererMSP.member')"
+
+  - &Excise
+    Name: Excise
+    ID: ExciseMSP
+    MSPDir: ./crypto-config/peerOrganizations/excise.com/msp
+    Policies: &ExcisePolicies
+      Readers:
+          Type: Signature
+          # Any member can READ e.g., query
+          Rule: "OR('ExciseMSP.member')"
+      Writers:
+          Type: Signature
+          # only admin or client can WRITE e.g., submit transaction
+          Rule: "OR('ExciseMSP.member')"
+      Admins:
+          Type: Signature
+          # Either Excise admin OR Orderer Admin can carry out admin activities
+          Rule: "OR('ExciseMSP.admin','OrdererMSP.admin')"
+      Endorsement:
+          Type: Signature
+          # only peer can act as an endorser
+          Rule: "OR('ExciseMSP.member')"
+    AnchorPeers:
+      - Host: peer1.excise.com
+        Port: 7051
+  - &Fbr
+    Name: Fbr
+    ID: FbrMSP
+    MSPDir: ./crypto-config/peerOrganizations/fbr.com/msp
+    Policies: &FbrPolicies
+      Readers:
+          Type: Signature
+          # Any member can READ e.g., query
+          Rule: "OR('FbrMSP.member')"
+      Writers:
+          Type: Signature
+          # Any member can WRITE e.g., submit transaction
+          Rule: "OR('FbrMSP.member')"
+      Admins:
+          Type: Signature
+          # Either Excise admin OR Orderer Admin can carry out admin activities
+          Rule: "OR('FbrMSP.admin','OrdererMSP.admin')"
+      Endorsement:
+          Type: Signature
+          # Any member can act as an endorser
+          Rule: "OR('FbrMSP.member')"
+    AnchorPeers:
+      - Host: peer1.fbr.com
+        Port: 7051
+  - &Manufacturer
+    Name: Manufacturer
+    ID: ManufacturerMSP
+    MSPDir: ./crypto-config/peerOrganizations/manufacturer.com/msp
+    Policies: &ManufacturerPolicies
+      Readers:
+          Type: Signature
+          # Any member can READ e.g., query
+          Rule: "OR('ManufacturerMSP.member')"
+      Writers:
+          Type: Signature
+          # Any member can WRITE e.g., submit transaction
+          Rule: "OR('ManufacturerMSP.member')"
+      Admins:
+          Type: Signature
+          # Either Excise admin OR Orderer Admin can carry out admin activities
+          Rule: "OR('ManufacturerMSP.admin','OrdererMSP.admin')"
+      Endorsement:
+          Type: Signature
+          # Any member can act as an endorser
+          Rule: "OR('ManufacturerMSP.member')"
+    AnchorPeers:
+      - Host: peer1.manufacturer.com
+        Port: 7051
+  
+
+#   ORDERER
+Orderer: &OrdererDefaults
+
+  OrdererType: solo
+
+  Addresses:
+    - orderer.excise.com:7050
+  # Policies for Orderer
+  Policies:
+    Readers:
+        Type: ImplicitMeta
+        Rule: "ANY Readers"
+    Writers:
+        Type: ImplicitMeta
+        Rule: "ANY Writers"
+    Admins:
+        Type: ImplicitMeta  
+        # UPDATED December 15, 2019
+        Rule: "MAJORITY Admins"
+        # Rule: "MAJORITY Admins"
+
+    # BlockValidation specifies what signatures must be included in the block
+    # from the orderer for the peer to validate it.
+    # Starting Fabric 2.x this is REQUIRED
+    BlockValidation:
+        Type: ImplicitMeta
+        Rule: "ANY Writers"
+        #AS SOLO ORDERER
+
+  # Batch Timeout: The amount of time to wait before creating a batch
+  BatchTimeout: 2s
+
+  # Batch Size: Controls the number of messages batched into a block
+  BatchSize:
+    MaxMessageCount: 10
+    AbsoluteMaxBytes: 98 MB
+    PreferredMaxBytes: 512 KB
+
+  Capabilities:
+    <<: *OrdererCapabilities
+
+Application: &ApplicationDefaults
+
+  ACLs: &ACLsDefault
+    
+    # ACL policy for lscc's "getid" function
+    lscc/ChaincodeExists: /Channel/Application/Readers
+
+    # ACL policy for lscc's "getdepspec" function
+    lscc/GetDeploymentSpec: /Channel/Application/Readers
+
+    # ACL policy for lscc's "getccdata" function
+    lscc/GetChaincodeData: /Channel/Application/Readers
+
+    # ACL Policy for lscc's "getchaincodes" function
+    lscc/GetInstantiatedChaincodes: /Channel/Application/Readers
+
+    #---Query System Chaincode (qscc) function to policy mapping for access control---#
+
+    # ACL policy for qscc's "GetChainInfo" function
+    qscc/GetChainInfo: /Channel/Application/Readers
+
+    # ACL policy for qscc's "GetBlockByNumber" function
+    qscc/GetBlockByNumber: /Channel/Application/Readers
+
+    # ACL policy for qscc's  "GetBlockByHash" function
+    qscc/GetBlockByHash: /Channel/Application/Readers
+
+    # ACL policy for qscc's "GetTransactionByID" function
+    qscc/GetTransactionByID: /Channel/Application/Readers
+
+    # ACL policy for qscc's "GetBlockByTxID" function
+    qscc/GetBlockByTxID: /Channel/Application/Readers
+
+    #---Configuration System Chaincode (cscc) function to policy mapping for access control---#
+
+    # ACL policy for cscc's "GetConfigBlock" function
+    cscc/GetConfigBlock: /Channel/Application/Readers
+
+    # ACL policy for cscc's "GetConfigTree" function
+    cscc/GetConfigTree: /Channel/Application/Readers
+
+    # ACL policy for cscc's "SimulateConfigTreeUpdate" function
+    cscc/SimulateConfigTreeUpdate: /Channel/Application/Readers
+
+    #---Miscellanesous peer function to policy mapping for access control---#
+
+    # ACL policy for invoking chaincodes on peer
+    peer/Propose: /Channel/Application/Writers
+
+    # ACL policy for chaincode to chaincode invocation
+    peer/ChaincodeToChaincode: /Channel/Application/Readers
+
+    #---Events resource to policy mapping for access control###---#
+
+    # ACL policy for sending block events
+    event/Block: /Channel/Application/Readers
+
+    # ACL policy for sending filtered block events
+    event/FilteredBlock: /Channel/Application/Readers
+
+    # Chaincode Lifecycle Policies introduced in Fabric 2.x
+    # ACL policy for _lifecycle's "CheckCommitReadiness" function
+    _lifecycle/CheckCommitReadiness: /Channel/Application/Writers
+
+    # ACL policy for _lifecycle's "CommitChaincodeDefinition" function
+    _lifecycle/CommitChaincodeDefinition: /Channel/Application/Writers
+
+    # ACL policy for _lifecycle's "QueryChaincodeDefinition" function
+    _lifecycle/QueryChaincodeDefinition: /Channel/Application/Readers
+
+    # ACL policy for _lifecycle's "QueryChaincodeDefinitions" function
+    _lifecycle/QueryChaincodeDefinitions: /Channel/Application/Readers
+
+  # Default policies
+  Policies: &ApplicationDefaultPolicies
+
+    # --channel-config-policy
+    Endorsement:
+        Type: ImplicitMeta
+        # Rule: "MAJORITY Endorsement"
+        Rule: "ANY Endorsement"
+    Readers:
+        Type: ImplicitMeta
+        Rule: "ANY Readers"
+    Writers:
+        Type: ImplicitMeta
+        Rule: "ANY Admins"
+    Admins:
+        Type: ImplicitMeta
+        Rule: "MAJORITY Admins"
+
+    # Introduced in Fabric 2.x for Chaincode Lifecycle
+    LifecycleEndorsement:
+        Type: ImplicitMeta
+        Rule: "ANY Endorsement"
+
+  Organizations:
+
+  Capabilities:
+    <<: *ApplicationCapabilities
+ 
+
+#   CHANNEL
+Channel: &ChannelDefaults
+  Policies:
+    Readers:
+        Type: ImplicitMeta
+        Rule: "ANY Readers"
+    Writers:
+        Type: ImplicitMeta
+        Rule: "ANY Writers"
+    Admins:
+        Type: ImplicitMeta
+        # Rule: "MAJORITY Admins"
+        Rule: "MAJORITY Admins"
+
+  Capabilities:
+    <<: *ChannelCapabilities
+
+  
+#   PROFILES
+Profiles:
+
+  AutomobileOrdererGenesis:
+      <<: *ChannelDefaults  #ORderer system channel policies
+      Orderer:
+          <<: *OrdererDefaults
+          Organizations:
+              - <<: *Orderer
+      Consortiums:
+        AutomobileConsortium:
+            Organizations:
+                  - <<: *Excise
+                  - <<: *Manufacturer
+                  - <<: *Fbr
+                  
+      Application:
+            <<: *ApplicationDefaults
+
+            Organizations:
+                 - <<: *Excise
+                 - <<: *Manufacturer
+                 - <<: *Fbr
+                
+                 
+
+      
+                                
+                  
+  AutomobileChannel:
+    <<: *ChannelDefaults
+    Consortium: AutomobileConsortium
+        
+    Application:
+        <<: *ApplicationDefaults
+        
+        Organizations:
+             - <<: *Excise
+             - <<: *Manufacturer
+             - <<: *Fbr
+            
+        
+
+
+  
