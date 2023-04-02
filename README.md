@@ -1,8 +1,9 @@
 <!-- first time  -->
-• Clone project
-• Run vagrant
-• cd setup
-• ./init-vexpress.sh
+Clone project
+Run vagrant
+cd setup
+./init-vexpress.sh
+
 Now log out and log back in.
 
 <!-- Run Project  -->
